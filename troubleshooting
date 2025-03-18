@@ -1,0 +1,64 @@
+ 29
+
+I am trying to deploy a WAR on the remote Tomcat (Remote Machine) using Jenkins deploy to container Plugin. I have done the following configuration in tomcat-users.xml
+
+<user username="deployer" password="deployer" roles="manager-gui,manager-script,admin" />
+
+I have setup the proper username password and port in Jenkins deployer container plugin. The setup is working fine for the local Tomcat. But for remote Tomcat I keep getting the following error:
+
+Caused by: org.codehaus.cargo.container.tomcat.internal.TomcatManagerException: The username you provided is not allowed to use the text-based Tomcat Manager (error 403) at org.codehaus.cargo.container.tomcat.internal.TomcatManager.invoke(TomcatManager.java:555)
+
+at org.codehaus.cargo.container.tomcat.internal.TomcatManager.list(TomcatManager.java:686) 
+at org.codehaus.cargo.container.tomcat.internal.TomcatManager.getStatus(TomcatManager.java:699) 
+at org.codehaus.cargo.container.tomcat.internal.AbstractTomcatManagerDeployer.redeploy(AbstractTomcatManagerDeployer.java:174)
+
+... 16 more
+Caused by: java.io.IOException: Server returned HTTP response code: 403 for URL: http://1.203.190.5:8080/manager/text/list 
+at sun.net.www.protocol.http.HttpURLConnection.getInputStream0(Unknown Source) 
+at sun.net.www.protocol.http.HttpURLConnection.getInputStream(Unknown Source) 
+at org.codehaus.cargo.container.tomcat.internal.TomcatManager.invoke(TomcatManager.java:544) ... 19 more
+
+    maventomcatjenkinsweb-deployment
+
+Share
+Improve this question
+Follow
+edited Dec 10, 2021 at 9:09
+Ryan M's user avatar
+Ryan M♦
+20.2k3434 gold badges7373 silver badges8282 bronze badges
+asked Jan 16, 2017 at 11:52
+harshlal028's user avatar
+harshlal028
+1,57311 gold badge1616 silver badges2727 bronze badges
+
+    Probably the entered user doesn't have Read/Write access on the Remote Machine. – 
+    RejeeshChandran
+    Commented Jan 16, 2017 at 12:28
+    I checked the access. User has access. – 
+    harshlal028
+    Commented Jan 17, 2017 at 6:45
+
+Add a comment
+9 Answers
+Sorted by:
+44
+
+This seems to be a Jenkins bug but I got around the problem by setting up following configuration in Tomcat:
+
+Edit the file /webapps/manager/META-INF/context.xml:
+
+Previous:
+
+<Context antiResourceLocking="false" privileged="true">
+  <Valve className="org.apache.catalina.valves.RemoteAddrValve" allow="127\.\d+\.\d+\.\d+|::1|0:0:0:0:0:0:0:1" />
+</Context>
+
+Change this file to comment the Value:
+
+<Context antiResourceLocking="false" privileged="true">
+  <!--
+    <Valve className="org.apache.catalina.valves.RemoteAddrValve"
+         allow="127\.\d+\.\d+\.\d+|::1|0:0:0:0:0:0:0:1" />
+    -->
+</Context>
